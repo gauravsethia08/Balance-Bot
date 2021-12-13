@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+
+<launch>
+  <!-- Name and spawn pose -->
+  <arg name="robot_name" default="balance_bot" />
+
+    <!-- Parse URDF file with specified arguments -->
+    <param name = "robot_description" command = "$(find xacro)/xacro.py $(find balance_bot)/urdf/balance_bot_v1.xacro"/>
+
+	<!--Launching a empty gazebo world-->
+	<include file="$(find gazebo_ros)/launch/empty_world.launch">
+		<!-- <arg name="world_name" value="$(find differential_drive_description)/world/demo_world.world"/> -->
+		<arg name="paused" value="true"/>
+		<arg name="use_sim_time" value="true"/>
+		<arg name="gui" value="true"/>
+		<arg name="headless" value="false"/>
+		<arg name="debug" value="false"/>
+	</include>
+
+    <!-- Pass parsed URDF to Gazebo model spawning service -->
+    <node pkg="gazebo_ros" type="spawn_model"  name="spawn_$(arg robot_name)" args="-urdf -param robot_description -model $(arg robot_name)"/>
+
+    <rosparam file="$(find balance_bot)/cfg/balance_bot_controller.yaml" command="load"/> 
+
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+        <param name="use_gui" value="false"/>
+    </node>
+
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" respawn="false" output="screen">
+      <param name="publish_frequency" value="50.0" />
+    </node>
+	    
+	<node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"  output="screen" ns="/balance_bot" args="joint_state_controller 
+          left_wheel_controller 
+          right_wheel_controller"/>
+
+</launch>

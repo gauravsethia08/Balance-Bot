@@ -1,0 +1,19 @@
+<launch>
+	<arg name = "model"/>
+	
+	<!--Parsing the XACRO file and loading robot descripion paramter-->
+	<param name = "robot_description" command = "$(find xacro)/xacro.py $(find balance_bot)/urdf/balance_bot_v1.xacro"/>
+	
+	<!--Setting GUi for joint silder-->
+	<!-- <param name = "use_gui" value = "true"/> -->
+	<node pkg="joint_state_publisher_gui" type="joint_state_publisher_gui" name="joint_state_publisher_gui" output="screen"/>
+	
+	<!--Setting Joint State Publisher -->
+	<!-- <node name = "joint_state_publisher" pkg = "joint_state_publisher" type = "joint_state_publisher"/> -->
+	
+	<!--Starting Robot State Publish-->
+	<node name = "robot_state_publisher" pkg = "robot_state_publisher" type = "robot_state_publisher"/>
+	
+	<!--Launching RVIZ-->
+	<node name = "rviz" pkg = "rviz" type = "rviz" output = "screen"  args = "-d $(find balance_bot)/rviz/view.rviz" required = "true"/>
+</launch>

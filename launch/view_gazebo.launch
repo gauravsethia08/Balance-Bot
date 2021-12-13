@@ -1,0 +1,20 @@
+<launch>
+	<arg name = "model"/>
+	
+	<!--Parsing the XACRO file and loading robot descripion paramter-->
+	<param name = "robot_description" command = "$(find xacro)/xacro.py $(find balance_bot)/urdf/balance_bot_v1.xacro"/>
+
+	<!--Launching a empty gazebo world-->
+	<include file="$(find gazebo_ros)/launch/empty_world.launch">
+		<!-- <arg name="world_name" value="$(find differential_drive_description)/world/demo_world.world"/> -->
+		<arg name="paused" value="true"/>
+		<arg name="use_sim_time" value="true"/>
+		<arg name="gui" value="true"/>
+		<arg name="headless" value="false"/>
+		<arg name="debug" value="false"/>
+	  </include>
+	
+	  <!--Spawning the model in gazebo world-->
+	  <node args="-param robot_description -urdf -model balance_bot" name="spawn_urdf" pkg="gazebo_ros" type="spawn_model"/>
+	
+</launch>

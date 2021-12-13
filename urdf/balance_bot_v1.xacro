@@ -1,0 +1,234 @@
+<?xml version="1.0"?>
+
+<!--Defining Robot-->
+<robot name = "balance_bot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+		
+	<!--Defining Constants-->
+	<property name = "deg_to_rad" value = "0.01745329251994329577"/>
+	<property name= "M_PI" value = "3.14159"/>
+	<property name = "M_SCALE" value = "0.1 0.1 0.1"/>
+
+	<!-- Body Properties -->
+	<property name = "body_length" value = "0.5"/>
+	<property name = "body_width" value = "0.2"/>
+	<property name = "body_height" value = "1.0"/>
+	<property name = "body_mass" value = "5.0"/>
+	 
+	<!-- Wheel Properties -->
+	<property name = "wheel_radius" value = "0.15"/>
+	<property name = "wheel_width" value = "0.07"/>
+	<property name = "wheel_mass" value = "0.5"/>
+
+
+	<!--Defining Materials-->
+	<!--Black Material-->
+	<material name = "black">
+		<color rgba = "0 0 0 1"/> 
+	</material>
+	
+	<!--Red Material-->
+	<material name = "red">
+		<color rgba = "0.9 0 0 1"/>
+	</material>
+	 	
+
+	<!--Defining Marcos for Transmission of Box-->
+	<xacro:macro name = "transmission_block" params = "joint_name">
+		<transmission name = "t1">
+			<!--Type of Transmission-->
+			<type>transmission_interace/SimpleTransmission</type>
+			<!--Joint for transmission-->
+			<joint name = "${joint_name}">
+				<hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+			</joint>
+			<!--Actuator-->
+			<actuator name = "${joint_name}_motor">
+				<hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+				<mechanicalReduction>1</mechanicalReduction>
+			</actuator>
+		</transmission>
+	</xacro:macro>
+
+
+	<!-- Wheel Marco  -->
+	<xacro:macro name = "wheel" params = "name parent jx jy jz">
+		<link name = "${name}">
+			<!-- Interial -->
+			<inertial>
+				<origin xyz="0 0 0" rpy="0 0 0"/>
+				<mass value="${wheel_mass}"/>
+				<inertia ixx="${wheel_mass/12*(3*wheel_radius*wheel_radius + wheel_width*wheel_width)}" ixy="0" ixz="0" iyy="${wheel_mass/12*(3*wheel_radius*wheel_radius + wheel_width*wheel_width)}" iyz="0" izz="${wheel_mass/2 * wheel_radius*wheel_radius}"/>
+			</inertial>
+			<!-- Visualization of robot -->
+			<visual>
+				<origin xyz = "0 0 0" rpy = "0 0 0"/>
+				<geometry>
+					<cylinder radius = "${wheel_radius}" length = "${wheel_width}"/>
+				</geometry>
+				<material name = "black">
+				</material>
+			</visual>
+			<!-- Collisions -->
+			<collision>
+				<origin xyz="0 0 0" rpy="0 0 0"/>
+				<geometry>
+					<cylinder radius = "${wheel_radius}" length = "${wheel_width}"/>
+				</geometry>
+			</collision>
+		</link>
+
+		<joint name = "${name}_joint" type = "continuous">
+			<!--Origin-->
+			<origin xyz="${jx} ${jy} ${jz}" rpy="${M_PI/2} 0 0"/>
+			<!--Parent Link-->
+			<parent link="${parent}"/>
+			<!--Child Link-->
+			  <child link="${name}"/>
+			<!-- Axis -->
+			<axis xyz="0 0 1" />
+		</joint>
+
+		<xacro:transmission_block joint_name = "${name}_joint"/>
+	</xacro:macro>
+
+
+	<!-- Base Link -->
+	<link name="base_link">
+		<inertial>
+		  <origin xyz="0 0 0" rpy="0 0 0"/>
+		  <mass value="0.01"/>
+		  <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+		</inertial>
+	</link>
+
+
+	<!-- Body -->
+	<link name = "body">
+		<!-- Interia -->
+		<inertial>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<mass value="${body_mass}"/>
+			<inertia ixx="${body_mass/12 * (body_length*body_length + body_height*body_height)}" ixy="0" ixz="0" iyy="${body_mass/12 * (body_width*body_width + body_height*body_height)}" iyz="0" izz="${body_mass/12 * (body_width*body_width + body_length*body_length)}"/>
+		</inertial>
+		
+		<!--Visualisation of robot-->
+		<visual>
+			<!--Origin-->
+			<origin xyz = "0 0 0" rpy = "0 0 0"/>
+			<!--Geometry-->
+			<geometry>
+				<!--Box-->
+				<box size = "${body_width} ${body_length} ${body_height}"/>
+			</geometry>
+			<!--Material-->
+			<material name = "red"/>
+		</visual>
+		<!--Collision-->
+		<collision>
+			<!--Origin-->
+			<origin xyz = "0 0 0" rpy = "0 0 0"/>
+			<!--Geometry-->
+			<geometry>
+				<box size = "${body_width} ${body_length} ${body_height}"/>
+			</geometry>
+		</collision>
+	</link>
+
+	<joint name="base_com" type="fixed">
+		<origin xyz="0 0 ${body_length/2}" rpy="0 0 0"/>
+		<parent link="base_link"/>
+		<child link="body"/>
+	</joint>
+
+	<!-- Wheels -->
+	<xacro:wheel name = "left_wheel" parent = "body" jx = "0.0" jy = "${body_length/2 + 0.05}" jz = "-${body_height/2}"/>
+	<xacro:wheel name = "right_wheel" parent = "body" jx = "0.0" jy = "-${body_length/2 + 0.05}" jz = "-${body_height/2}"/>
+
+	<!-- IMU -->
+	<link name="imu_link">
+		<!-- Interia -->
+		<inertial>
+			<mass value="1e-5" />
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
+		</inertial>
+		<!-- Visual -->
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+				<box size="0.02 0.015 0.008"/>
+			</geometry>
+			<!--Material-->
+			<material name = "black"/>
+		</visual>
+		<!-- Collision  -->
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<geometry>
+				<box size="0.02 0.015 0.008"/>
+			</geometry>
+		</collision>
+	</link>
+	
+	<joint name="imu_joint" type="fixed">
+		<!-- Origin  -->
+		<origin xyz="0 0 ${body_length/2}" rpy="0 0 0" />
+		<!-- Parent  -->
+		<parent link="body" />
+		<!-- Child  -->
+		<child link="imu_link" />
+	</joint>
+	
+
+	<!--Adding Gazebo reference-->
+	<gazebo reference = "body">
+		<material>Gazebo/Red</material>
+	</gazebo>
+
+	<gazebo reference = "imu_link">
+		<material>Gazebo/Black</material>
+	</gazebo>
+
+	<gazebo reference = "left_wheel">
+		<material>Gazebo/Black</material>
+		<mu1>0.5</mu1>
+		<mu2>0.5</mu2>
+	</gazebo>
+
+	<gazebo reference = "right_wheel">
+		<material>Gazebo/Black</material>
+		<mu1>0.5</mu1>
+		<mu2>0.5</mu2>
+	</gazebo>
+
+
+	<!-- IMU Plugin  -->
+	<gazebo reference="imu_link">
+		<gravity>true</gravity>
+		<sensor name="imu_sensor" type="imu">
+			<always_on>true</always_on>
+			<update_rate>100</update_rate>
+			<visualize>true</visualize>
+			<topic>imu_data</topic>
+			<plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
+				<topicName>imu</topicName>
+				<bodyName>imu_link</bodyName>
+				<updateRateHZ>200.0</updateRateHZ>
+				<gaussianNoise>0.0</gaussianNoise>
+				<xyzOffset>0 0 0</xyzOffset>
+				<rpyOffset>0 0 0</rpyOffset>
+				<frameName>imu_link</frameName>
+				<initialOrientationAsReference>false</initialOrientationAsReference>
+			</plugin>
+			<pose>0 0 0 0 0 0</pose>
+		</sensor>
+	</gazebo>
+	
+  	<!-- ros_control plugin -->
+	<gazebo>
+		<plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+			<robotNamespace>/balance_bot</robotNamespace>
+		</plugin>
+	</gazebo>
+	
+</robot>
